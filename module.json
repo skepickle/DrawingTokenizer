@@ -2,9 +2,9 @@
 	"name": "DrawingTokenizer",
 	"title": "DrawingTokenizer",
 	"description": "Allows to convert one or multiple drawings into a image.",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minimumCoreVersion": "0.6.0",
-	"minimumCoreVersion": "0.6.5",
+	"compatibleCoreVersion": "0.6.5",
 	"author": "KayelGee - KayelGee#5241",
 	"scripts": [
 		"drawingtokenizer.js"
@@ -20,6 +20,6 @@
 	"socket": true,
 	"url": "https://github.com/KayelGee/DrawingTokenizer",
   "manifest": "https://raw.githubusercontent.com/KayelGee/DrawingTokenizer/master/module.json",
-  "download": "https://github.com/KayelGee/DrawingTokenizer/releases/download/v1.0.0/v1.0.0.zip",
-  "readme": "https://github.com/KayelGee/DrawingTokenizer/blob/v1.0.0/README.md"
+  "download": "https://github.com/KayelGee/DrawingTokenizer/releases/download/v1.0.1/v1.0.1.zip",
+  "readme": "https://github.com/KayelGee/DrawingTokenizer/blob/v1.0.1/README.md"
 }
