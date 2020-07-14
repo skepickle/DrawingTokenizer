@@ -1,0 +1,5 @@
+{
+	"DRAWINGTOKENIZER.error.NoDrawingsSelected": "No drawings are selected!",
+	"DRAWINGTOKENIZER.error.NoFilenameEntered": "You did not enter a filename! Drawing was not saved.",
+	"DRAWINGTOKENIZER.ConvertToImage": "Convert Drawing to Image"
+}
