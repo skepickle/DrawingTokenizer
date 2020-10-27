@@ -20,39 +20,47 @@
 		 * Convert the selected drawings to an png image
 		 */
 		static convertDrawing(filename, drawings) {
-			const savedGridType = game.scenes.active.data.gridType;
-			// Hook into canvasReady so the image can be exported after the grid has been deactivated
-			Hooks.once('canvasReady', () => {
-				// Loop through all selected drawings and find the top left corner and bottom right corner
-				let topleft = {x:0,y:0}
-				let bottomright = {x:0,y:0}
-				let first = true;
-				for (const key in drawings) {
-					if (drawings.hasOwnProperty(key)) {
-						const drawing = drawings[key];
-						if (first){
-							first = false;
-							topleft.x = drawing.data.x;
-							topleft.y = drawing.data.y;
-							bottomright.x = drawing.data.x + drawing.data.width;
-							bottomright.y = drawing.data.y + drawing.data.height;
-						}
-						else{
-							if(topleft.x > drawing.data.x) topleft.x = drawing.data.x;
-							if(topleft.y > drawing.data.y) topleft.y = drawing.data.y;
-							if(bottomright.x < drawing.data.x + drawing.data.width) bottomright.x = drawing.data.x + drawing.data.width;
-							if(bottomright.y < drawing.data.y + drawing.data.height) bottomright.y = drawing.data.y + drawing.data.height;
-						}
+			const savedGridVisibility = canvas.grid.visible;
+
+			//Deactivate the grid
+			canvas.grid.visible = false;
+
+			// Loop through all selected drawings and find the top left corner and bottom right corner
+			let topleft = {x:0,y:0}
+			let bottomright = {x:0,y:0}
+			let first = true;
+			let app = canvas.app;
+			let points = [{x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}]
+			for (const key in drawings) {
+				if (drawings.hasOwnProperty(key)) {
+					const drawing = drawings[key];
+					if (first){
+						first = false;
+						[topleft.x, topleft.y] = [drawing.data.x, drawing.data.y];
+						topleft = app.stage.toGlobal(topleft);
+						[bottomright.x, bottomright.y] = [drawing.data.x + drawing.data.width, drawing.data.y + drawing.data.height];
+						bottomright = app.stage.toGlobal(bottomright);
+						
+					}					
+					points[0]= {x:drawing.data.x, y:drawing.data.y};
+					points[1]= {x:drawing.data.x + drawing.data.width, y:drawing.data.y};
+					points[2]= {x:drawing.data.x, y:drawing.data.y + drawing.data.height};
+					points[3]= {x:drawing.data.x + drawing.data.width, y:drawing.data.y + drawing.data.height};
+					for (let i = 0; i < points.length; i++) {
+						points[i] = app.stage.toGlobal(points[i]);
+						
+						if(topleft.x > points[i].x) topleft.x = points[i].x;
+						if(topleft.y > points[i].y) topleft.y = points[i].y;
+						if(bottomright.x < points[i].x) bottomright.x = points[i].x;
+						if(bottomright.y < points[i].y) bottomright.y = points[i].y;
 					}
 				}
-				canvas.activeLayer.releaseAll();
-				DrawingTokenizer.convertToBlobAndUpload(canvas.app, topleft, bottomright, filename + ".png");
-				
-				//Reactivate the grid	
-				game.scenes.active.update({gridType: savedGridType});
-			});
-			//Deactivate the grid
-			game.scenes.active.update({gridType:CONST.GRID_TYPES.GRIDLESS});
+			}
+			canvas.activeLayer.releaseAll();
+			DrawingTokenizer.convertToBlobAndUpload(app, topleft, bottomright, filename + ".png");
+			
+			//Reactivate the grid	
+			canvas.grid.visible = savedGridVisibility;
 		}
 
 		/**
@@ -74,9 +82,7 @@
 			let context = tmpcanvas.getContext("2d");
 			tmpcanvas.width = bottomright.x - topleft.x;
 			tmpcanvas.height = bottomright.y - topleft.y;
-			let xoffset = canvas.stage.pivot._x-(canvas.app.view.width/2);
-			let yoffset = canvas.stage.pivot._y-(canvas.app.view.height/2);
-			context.drawImage(sourceCanvas, xoffset-topleft.x, yoffset-topleft.y);
+			context.drawImage(sourceCanvas, -topleft.x, -topleft.y);
 			return tmpcanvas;
 		}
 
