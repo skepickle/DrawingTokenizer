@@ -19,81 +19,41 @@
 		/**
 		 * Convert the selected drawings to an png image
 		 */
-		static convertDrawing(filename, drawings) {
+		static async convertDrawing(filename, drawings) {
+			let container = new PIXI.Container();
 			const savedGridVisibility = canvas.grid.visible;
 
 			//Deactivate the grid
 			canvas.grid.visible = false;
 
-			// Loop through all selected drawings and find the top left corner and bottom right corner
-			let topleft = {x:0,y:0}
-			let bottomright = {x:0,y:0}
-			let first = true;
-			let app = canvas.app;
-			let points = [{x:0,y:0}, {x:0,y:0}, {x:0,y:0}, {x:0,y:0}]
-			for (const key in drawings) {
-				if (drawings.hasOwnProperty(key)) {
-					const drawing = drawings[key];
-					if (first){
-						first = false;
-						[topleft.x, topleft.y] = [drawing.data.x, drawing.data.y];
-						topleft = app.stage.toGlobal(topleft);
-						[bottomright.x, bottomright.y] = [drawing.data.x + drawing.data.width, drawing.data.y + drawing.data.height];
-						bottomright = app.stage.toGlobal(bottomright);
-						
-					}					
-					points[0]= {x:drawing.data.x, y:drawing.data.y};
-					points[1]= {x:drawing.data.x + drawing.data.width, y:drawing.data.y};
-					points[2]= {x:drawing.data.x, y:drawing.data.y + drawing.data.height};
-					points[3]= {x:drawing.data.x + drawing.data.width, y:drawing.data.y + drawing.data.height};
-					for (let i = 0; i < points.length; i++) {
-						points[i] = app.stage.toGlobal(points[i]);
-						
-						if(topleft.x > points[i].x) topleft.x = points[i].x;
-						if(topleft.y > points[i].y) topleft.y = points[i].y;
-						if(bottomright.x < points[i].x) bottomright.x = points[i].x;
-						if(bottomright.y < points[i].y) bottomright.y = points[i].y;
-					}
-				}
+			let mydrawings = canvas.drawings.controlled;	
+			canvas.drawings.releaseAll();
+			//Copy all drawings into a PIXI Container
+			for (let i = 0; i < mydrawings.length; i++) {
+				container.addChild(mydrawings[i].clone());
+				await container.children[i].draw();
 			}
-			canvas.activeLayer.releaseAll();
-			DrawingTokenizer.convertToBlobAndUpload(app, topleft, bottomright, filename + ".png");
+			await DrawingTokenizer.convertContainerToBlobAndUpload(container, filename + ".png");
 			
 			//Reactivate the grid	
 			canvas.grid.visible = savedGridVisibility;
 		}
 
-		/**
-		 * Render and crop canvas and upload image to foundry
-		 */
-		static convertToBlobAndUpload(app, topleft, bottomright, fileName) {
-			app.render();
-			var DTcanvas = app.renderer.extract.canvas();
-			var croppedCanvas = DrawingTokenizer.cropCanvas(DTcanvas, topleft, bottomright);
-
-			DrawingTokenizer.uploadToFoundry(DrawingTokenizer.getCanvasBlob(croppedCanvas), fileName).then();
-		}
-
-		/**
-		 * Crop the image via a temporary canvas
-		 */
-		static cropCanvas(sourceCanvas, topleft, bottomright){
-			let tmpcanvas = document.createElement("canvas");
-			let context = tmpcanvas.getContext("2d");
-			tmpcanvas.width = bottomright.x - topleft.x;
-			tmpcanvas.height = bottomright.y - topleft.y;
-			context.drawImage(sourceCanvas, -topleft.x, -topleft.y);
-			return tmpcanvas;
+		static async convertContainerToBlobAndUpload(container, fileName) {
+			return DrawingTokenizer.uploadToFoundry(DrawingTokenizer.getContainerBlob(container), fileName);
 		}
 
 		/**
 		 * Convert canvas to Blob
 		 */
-		static getCanvasBlob(canvas) {
+		static getContainerBlob(container) {
 			return new Promise(function(resolve, reject) {
-			  canvas.toBlob(function(blob) {
-				resolve(blob)
-			  })
+				console.log(canvas.app.renderer.extract.image(container).src);
+				fetch(canvas.app.renderer.extract.image(container).src)
+				.then(res => res.blob())
+				.then(blob => {
+					resolve(blob);
+				});
 			})
 		  }
 
@@ -112,25 +72,23 @@
 			// Dispatch the request
 			const request = await fetch('/upload', {method: "POST", body: fd});
 			if ( request.status === 413 ) {
-			return ui.notifications.error(game.i18n.localize("FILES.ErrorTooLarge"));
+				return ui.notifications.error(game.i18n.localize("FILES.ErrorTooLarge"));
 			} else if ( request.status !== 200 ) {
-			return ui.notifications.error(game.i18n.localize("FILES.ErrorSomethingWrong"));
+				return ui.notifications.error(game.i18n.localize("FILES.ErrorSomethingWrong"));
 			}
 		
 			// Retrieve the server response
 			const response = await request.json();
 			if (response.error) {
-			ui.notifications.error(response.error);
-			return false;
+				ui.notifications.error(response.error);
+				return false;
 			} else if (response.message) {
-			if ( /^(modules|systems)/.test(response.path) ) {
-				ui.notifications.warn(game.i18n.localize("FILES.WarnUploadModules"))
-			}
-			ui.notifications.info(response.message);
+				if ( /^(modules|systems)/.test(response.path) ) {
+					ui.notifications.warn(game.i18n.localize("FILES.WarnUploadModules"))
+				}
+				ui.notifications.info(response.message);
 			}
 			return response;
-			
-
 		  }
 
 		/**
@@ -197,8 +155,6 @@
 			})
 		}
 	}
-
-	window.KLG = window.KLG || {};
 	Hooks.on('getSceneControlButtons', (controls) => DrawingTokenizer._getControlButtons(controls));
 	Hooks.once('canvasReady', () => DrawingTokenizer.initialize());
 })();
