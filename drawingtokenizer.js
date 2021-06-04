@@ -9,11 +9,11 @@
 		}
 
 		static getWorldPath(){
-			return "worlds/" + game.world.name;
+			return "worlds/" + game.world.data.name;
 		}
 
 		static getUploadPath(){
-			return "worlds/" + game.world.name + "/DrawingTokenizerData";
+			return "worlds/" + game.world.data.name + "/DrawingTokenizerData";
 		}
 
 		/**
