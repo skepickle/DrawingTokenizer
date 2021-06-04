@@ -1,4 +1,6 @@
 (async () => {
+	
+	const IS_WEBP_EXPORT_SUPPORTED = document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') == 0;
 	class DrawingTokenizer {
 		static initialize(){
 			(async () => {
@@ -19,7 +21,7 @@
 		/**
 		 * Convert the selected drawings to an png image
 		 */
-		static async convertDrawing(filename, drawings) {
+		static async convertDrawing(filename, drawings, type, quality) {
 			let container = new PIXI.Container();
 			const savedGridVisibility = canvas.grid.visible;
 
@@ -33,23 +35,34 @@
 				container.addChild(mydrawings[i].clone());
 				await container.children[i].draw();
 			}
-			await DrawingTokenizer.convertContainerToBlobAndUpload(container, filename + ".png");
+			switch(type){
+				case "image/png":
+					filename += ".png";
+					break;
+				case "image/jpeg":
+					filename += ".jpeg";
+					break;
+				case "image/webp":
+					filename += ".webp";
+					break;
+			}
+			await DrawingTokenizer.convertContainerToBlobAndUpload(container, filename, type, quality);
 			
 			//Reactivate the grid	
 			canvas.grid.visible = savedGridVisibility;
 		}
 
-		static async convertContainerToBlobAndUpload(container, fileName) {
-			return DrawingTokenizer.uploadToFoundry(DrawingTokenizer.getContainerBlob(container), fileName);
+		static async convertContainerToBlobAndUpload(container, fileName, type, quality) {
+			return DrawingTokenizer.uploadToFoundry(DrawingTokenizer.getContainerBlob(container, type, quality), fileName);
 		}
 
 		/**
 		 * Convert canvas to Blob
 		 */
-		static getContainerBlob(container) {
+		static getContainerBlob(container, type, quality) {
 			return new Promise(function(resolve, reject) {
-				console.log(canvas.app.renderer.extract.image(container).src);
-				fetch(canvas.app.renderer.extract.image(container).src)
+				console.log(canvas.app.renderer.extract.image(container, type, quality).src);
+				fetch(canvas.app.renderer.extract.image(container, type, quality).src)
 				.then(res => res.blob())
 				.then(blob => {
 					resolve(blob);
@@ -138,19 +151,47 @@
 		static _convertDrawingDialog() {
 			if(Object.keys(canvas.drawings._controlled).length <= 0) return ui.notifications.error(game.i18n.localize("DRAWINGTOKENIZER.error.NoDrawingsSelected"));
 			const selectedDrawings = canvas.drawings._controlled;
-			
-			const form = `<form><div class="form-group">
-			<label>Image filename</label>
-			<input type="text" name="filename" placeholder="drawing-name" required/>
+			const WebPText = IS_WEBP_EXPORT_SUPPORTED?"WebP":"WebP(Unsupported by your browser)";
+			let form = `<form><div class="form-group-stacked">
+			<div class="form-group">
+				<label>Image filename</label>
+				<input type="text" name="filename" placeholder="drawing-name" required/>
+			</div>
+			<div class="form-group">
+				<label>Image type</label>
+				<select name="type">
+					<option value="image/png" selected="selected">Png</option>
+					<option value="image/webp">${WebPText}</option>
+				</select>
+			</div>
+			<div class="form-group">
+				<label>Image Quality 0-1(for WebP only)</label>
+				<input type="text" name="quality" placeholder="0.92"/>
+			</div>
 			</div></form>`;
+
 			return Dialog.confirm({
 			title: "Convert drawing to image",
 			content: form,
 			yes: html => {
 				const filename = html.find("input")[0].value;
+				const type = html.find("select")[0].value;
+				let quality = html.find("input")[1].value;
+				try {
+					quality = parseFloat(quality);
+				} catch (error) {
+					quality = 0.92;
+				}
+				if(isNaN(quality)) quality = 0.92;
+				if(quality <0) quality = 0;
+				if(quality > 1) quality = 1;
+				
+				if(!IS_WEBP_EXPORT_SUPPORTED) {
+					type = "image/png";
+				}
 				if(filename.trim().length == 0) return ui.notifications.error(game.i18n.localize("DRAWINGTOKENIZER.error.NoFilenameEntered"));
 
-				DrawingTokenizer.convertDrawing(filename, selectedDrawings);
+				DrawingTokenizer.convertDrawing(filename, selectedDrawings, type, quality);
 			}
 			})
 		}
