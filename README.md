@@ -3,7 +3,7 @@
 ![GitHub Releases](https://img.shields.io/github/downloads/KayelGee/DrawingTokenizer/latest/total?style=for-the-badge) 
 ![GitHub All Releases](https://img.shields.io/github/downloads/KayelGee/DrawingTokenizer/total?style=for-the-badge&label=Downloads+total)  
 
-**[Compatibility]**: *FoundryVTT* 0.6.0+  
+**[Compatibility]**: *FoundryVTT* 0.8.6+  
 **[Systems]**: *any*  
 **[Languages]**: *English*  
 
@@ -17,6 +17,7 @@ Ever wanted to use your drawings for your tokens and actors? This module enables
 ## Usage
 
 Select the drawings tool. Select your drawings you wish to convert, then click the convert to image tool. Type in a name and you'll find you image in "yourworld/DrawingTokenizerData/yourimage.png".
+WebP export is currently only supported by Chrome, but this is dynamically checked, so if your browser adds support then this will be automatically enabled.
 
 ![](DrawingTokenizer.gif)
 
