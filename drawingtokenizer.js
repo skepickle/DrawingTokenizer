@@ -175,7 +175,7 @@
 			content: form,
 			yes: html => {
 				const filename = html.find("input")[0].value;
-				const type = html.find("select")[0].value;
+				let type = html.find("select")[0].value;
 				let quality = html.find("input")[1].value;
 				try {
 					quality = parseFloat(quality);
