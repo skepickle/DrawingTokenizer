@@ -11,11 +11,11 @@
 		}
 
 		static getWorldPath(){
-			return "worlds/" + game.world.data.name;
+			return "worlds/" + game.world.id;
 		}
 
 		static getUploadPath(){
-			return "worlds/" + game.world.data.name + "/DrawingTokenizerData";
+			return "worlds/" + game.world.id + "/DrawingTokenizerData";
 		}
 
 		/**
@@ -28,12 +28,12 @@
 			//Deactivate the grid
 			canvas.grid.visible = false;
 
-			let mydrawings = canvas.drawings.controlled;	
-			canvas.drawings.releaseAll();
+			//canvas.drawings.releaseAll();
 			//Copy all drawings into a PIXI Container
-			for (let i = 0; i < mydrawings.length; i++) {
-				container.addChild(mydrawings[i].clone());
-				await container.children[i].draw();
+			for (let i = 0; i < drawings.length; i++) {
+				container.addChild(drawings[i].shape.clone());
+				container.children[i].transform = drawings[i].shape.transform;
+				//await container.children[i].draw();
 			}
 			switch(type){
 				case "image/png":
@@ -50,6 +50,8 @@
 			
 			//Reactivate the grid	
 			canvas.grid.visible = savedGridVisibility;
+
+			container.destroy({ children: true });
 		}
 
 		static async convertContainerToBlobAndUpload(container, fileName, type, quality) {
@@ -149,8 +151,8 @@
 		 * Present the user with a dialog to convert a drawing to an image.
 		 */
 		static _convertDrawingDialog() {
-			if(Object.keys(canvas.drawings._controlled).length <= 0) return ui.notifications.error(game.i18n.localize("DRAWINGTOKENIZER.error.NoDrawingsSelected"));
-			const selectedDrawings = canvas.drawings._controlled;
+			if(Object.keys(canvas.drawings.controlled).length <= 0) return ui.notifications.error(game.i18n.localize("DRAWINGTOKENIZER.error.NoDrawingsSelected"));
+			const selectedDrawings = canvas.drawings.controlled;
 			const WebPText = IS_WEBP_EXPORT_SUPPORTED?"WebP":"WebP(Unsupported by your browser)";
 			let form = `<form><div class="form-group-stacked">
 			<div class="form-group">
