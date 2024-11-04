@@ -63,12 +63,15 @@
 		 */
 		static getContainerBlob(container, type, quality) {
 			return new Promise(function(resolve, reject) {
-				console.log(canvas.app.renderer.extract.image(container, type, quality).src);
-				fetch(canvas.app.renderer.extract.image(container, type, quality).src)
-				.then(res => res.blob())
-				.then(blob => {
-					resolve(blob);
-				});
+				(async () => {
+					let img = await canvas.app.renderer.extract.image(container, type, quality);
+					console.log(img.src);
+					fetch(img.src)
+					.then(res => res.blob())
+					.then(blob => {
+						resolve(blob);
+					});
+				})()
 			})
 		  }
 
@@ -114,16 +117,14 @@
 			const source="data";
 			let target=DrawingTokenizer.getWorldPath();
 
-			let data = {action: "browseFiles", storage: source, target: target};
-			let files = await FilePicker._manageFiles(data, options);
+			let files = await FilePicker.browse(source, target, options);
 			let DirExists=false;
 			target=DrawingTokenizer.getUploadPath();
 			files.dirs.forEach(dir => {
 				DirExists= DirExists || dir===target;
 			});
 			if(!DirExists){
-				data = {action: "createDirectory", storage: source, target: target};
-				await FilePicker._manageFiles(data, options);
+				await FilePicker.createDirectory(source, target, options);
 			}
 		}
 		
